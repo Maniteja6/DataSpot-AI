@@ -1,0 +1,36 @@
+/* DataSpot AI — design tokens
+   Signature concept: a radar "spot" sweeping over data — the product finds
+   the signal in the noise. Deep navy field, one bright signal-green accent
+   used sparingly, warm amber reserved strictly for alerts/anomalies.
+
+   Values are space-separated RGB triplets so Tailwind's `/opacity` modifier
+   (e.g. bg-bg-surface/70) works via rgb(var(--x) / <alpha-value>). */
+
+:root,
+.dark {
+  --bg: 10 14 26;
+  --bg-surface: 16 21 42;
+  --bg-raised: 22 28 55;
+  --ink: 238 241 251;
+  --ink-muted: 154 163 196;
+  --ink-faint: 92 100 137;
+  --signal: 52 232 176;
+  --signal-soft: rgba(52, 232, 176, 0.14);
+  --amber: 255 180 84;
+  --rose: 255 107 129;
+  --line: 154 163 196;
+}
+
+.light {
+  --bg: 245 243 238;
+  --bg-surface: 255 255 255;
+  --bg-raised: 255 255 255;
+  --ink: 20 23 42;
+  --ink-muted: 86 93 120;
+  --ink-faint: 135 144 172;
+  --signal: 14 163 128;
+  --signal-soft: rgba(14, 163, 128, 0.1);
+  --amber: 179 114 10;
+  --rose: 199 53 83;
+  --line: 20 23 42;
+}

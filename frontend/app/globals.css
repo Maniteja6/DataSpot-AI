@@ -1,0 +1,81 @@
+@import "../styles/themes.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  border-color: rgb(var(--line) / 0.14);
+}
+
+html,
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+}
+
+body {
+  font-family: var(--font-body), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--signal-soft);
+  color: rgb(var(--signal));
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--ink-faint));
+  border-radius: 999px;
+}
+
+@layer components {
+  .glass-panel {
+    @apply relative rounded-2xl border border-line bg-bg-surface/70 backdrop-blur-xl;
+  }
+
+  .glass-panel::before {
+    content: "";
+    @apply pointer-events-none absolute inset-0 rounded-2xl;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0) 40%
+    );
+  }
+
+  .signal-ring {
+    box-shadow: 0 0 0 1px var(--signal-soft), 0 0 32px -8px var(--signal-soft);
+  }
+
+  .scan-hover {
+    @apply relative overflow-hidden;
+  }
+  .scan-hover::after {
+    content: "";
+    @apply pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 opacity-0;
+    background: linear-gradient(
+      100deg,
+      transparent,
+      var(--signal-soft) 40%,
+      transparent 80%
+    );
+  }
+  .scan-hover:hover::after {
+    @apply opacity-100 animate-scanline;
+  }
+
+  .kpi-value {
+    @apply font-display text-3xl font-medium tracking-tight text-ink;
+  }
+
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.16em] text-ink-faint;
+  }
+}
