@@ -1,0 +1,117 @@
+# CloudWatch log group definitions for DataSpot AI.
+# Apply with: aws cloudformation deploy --template-file cloudwatch_log_groups.yaml --stack-name dataspot-ai-logs
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudWatch log groups for DataSpot AI backend, agents, and RAG pipeline.
+
+Parameters:
+  RetentionInDays:
+    Type: Number
+    Default: 30
+    Description: Number of days to retain logs across all DataSpot AI log groups.
+
+Resources:
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/api
+      RetentionInDays: !Ref RetentionInDays
+
+  PipelineOrchestratorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/orchestrator
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentCoreRuntimeLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agentcore/runtime
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentDatasetUnderstandingLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/dataset-understanding
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentDataCleaningLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/data-cleaning
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentAnalyticsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/analytics
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentPredictiveAnalyticsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/predictive-analytics
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentBusinessIntelligenceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/business-intelligence
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentDecisionSupportLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/decision-support
+      RetentionInDays: !Ref RetentionInDays
+
+  AgentExecutiveSummaryLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/executive-summary
+      RetentionInDays: !Ref RetentionInDays
+
+  RagChatLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/agents/rag-chat
+      RetentionInDays: !Ref RetentionInDays
+
+  RagIndexingLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/rag/indexing
+      RetentionInDays: !Ref RetentionInDays
+
+  RagRetrievalLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /dataspot-ai/rag/retrieval
+      RetentionInDays: !Ref RetentionInDays
+
+Outputs:
+  ApiLogGroupName:
+    Value: !Ref ApiLogGroup
+  PipelineOrchestratorLogGroupName:
+    Value: !Ref PipelineOrchestratorLogGroup
+  AgentCoreRuntimeLogGroupName:
+    Value: !Ref AgentCoreRuntimeLogGroup
+  AgentDatasetUnderstandingLogGroupName:
+    Value: !Ref AgentDatasetUnderstandingLogGroup
+  AgentDataCleaningLogGroupName:
+    Value: !Ref AgentDataCleaningLogGroup
+  AgentAnalyticsLogGroupName:
+    Value: !Ref AgentAnalyticsLogGroup
+  AgentPredictiveAnalyticsLogGroupName:
+    Value: !Ref AgentPredictiveAnalyticsLogGroup
+  AgentBusinessIntelligenceLogGroupName:
+    Value: !Ref AgentBusinessIntelligenceLogGroup
+  AgentDecisionSupportLogGroupName:
+    Value: !Ref AgentDecisionSupportLogGroup
+  AgentExecutiveSummaryLogGroupName:
+    Value: !Ref AgentExecutiveSummaryLogGroup
+  RagChatLogGroupName:
+    Value: !Ref RagChatLogGroup
+  RagIndexingLogGroupName:
+    Value: !Ref RagIndexingLogGroup
+  RagRetrievalLogGroupName:
+    Value: !Ref RagRetrievalLogGroup

@@ -1,0 +1,125 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DatasetBucketReadWrite",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::dataspot-ai-datasets",
+        "arn:aws:s3:::dataspot-ai-datasets/*"
+      ]
+    },
+    {
+      "Sid": "DatasetBucketSignedUrls",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObjectAcl",
+        "s3:GetObjectAcl"
+      ],
+      "Resource": "arn:aws:s3:::dataspot-ai-datasets/*"
+    },
+    {
+      "Sid": "BedrockAgentCoreInvoke",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock-agentcore:InvokeAgentRuntime",
+        "bedrock-agentcore:GetAgentRuntime",
+        "bedrock-agentcore:ListAgentRuntimes"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockAgentCoreMemory",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:CreateMemory",
+        "bedrock-agentcore:GetMemory",
+        "bedrock-agentcore:PutMemoryRecord",
+        "bedrock-agentcore:ListMemoryRecords",
+        "bedrock-agentcore:DeleteMemoryRecord"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockAgentCoreGateway",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:InvokeGateway",
+        "bedrock-agentcore:GetGateway"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "BedrockAgentCoreIdentity",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock-agentcore:GetWorkloadAccessToken",
+        "bedrock-agentcore:GetResourceApiKey",
+        "bedrock-agentcore:GetResourceOauth2Token"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "TitanEmbeddingsInvoke",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0",
+        "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0"
+      ]
+    },
+    {
+      "Sid": "OpenSearchServerlessAccess",
+      "Effect": "Allow",
+      "Action": [
+        "aoss:APIAccessAll",
+        "aoss:BatchGetCollection",
+        "aoss:CreateIndex",
+        "aoss:UpdateIndex",
+        "aoss:DeleteIndex",
+        "aoss:DescribeIndex",
+        "aoss:ReadDocument",
+        "aoss:WriteDocument"
+      ],
+      "Resource": "arn:aws:aoss:*:*:collection/dataspot-ai-vectors"
+    },
+    {
+      "Sid": "CloudWatchLogging",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "logs:DescribeLogGroups"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:/dataspot-ai/*",
+        "arn:aws:logs:*:*:log-group:/dataspot-ai/*:log-stream:*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "cloudwatch:namespace": "DataSpotAI"
+        }
+      }
+    }
+  ]
+}

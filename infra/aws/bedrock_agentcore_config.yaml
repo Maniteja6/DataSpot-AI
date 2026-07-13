@@ -1,0 +1,154 @@
+# Bedrock AgentCore configuration for DataSpot AI.
+# Defines the runtime, the 8 specialized agents, their action groups, memory,
+# identity, gateway, and observability settings referenced by
+# backend/app/agentcore/*.
+#
+# This file is consumed by backend/app/config/agentcore_config.py at startup
+# and mirrors what you'd otherwise configure via the AWS console / AgentCore CLI.
+
+runtime:
+  name: dataspot-ai-agentcore-runtime
+  region: us-east-1
+  execution_role_arn: "arn:aws:iam::<ACCOUNT_ID>:role/dataspot-ai-agentcore-runtime-role"
+  network_mode: PUBLIC          # PUBLIC | VPC
+  protocol: HTTP
+  session_timeout_seconds: 900
+
+foundation_models:
+  reasoning_model: anthropic.claude-3-5-sonnet-20241022-v2:0
+  fast_model: anthropic.claude-3-5-haiku-20241022-v1:0
+  embedding_model: amazon.titan-embed-text-v2:0
+
+agents:
+  - name: dataset_understanding
+    display_name: "Dataset Understanding Agent"
+    description: >
+      Profiles schema, infers column semantics, and detects primary/foreign
+      key-like relationships in an uploaded dataset.
+    foundation_model: reasoning_model
+    action_groups:
+      - dataset_actions
+    memory: session
+    max_iterations: 6
+
+  - name: data_cleaning
+    display_name: "Data Cleaning Agent"
+    description: >
+      Proposes and applies cleaning operations — deduplication, missing-value
+      imputation, type coercion, outlier flagging.
+    foundation_model: reasoning_model
+    action_groups:
+      - dataset_actions
+    memory: session
+    max_iterations: 6
+
+  - name: analytics
+    display_name: "Analytics Agent"
+    description: >
+      Computes descriptive statistics, correlations, trend decomposition,
+      and segmentation.
+    foundation_model: reasoning_model
+    action_groups:
+      - analytics_actions
+      - rag_actions
+    memory: session
+    max_iterations: 8
+
+  - name: predictive_analytics
+    display_name: "Predictive Analytics Agent"
+    description: >
+      Trains and compares regression, classification, clustering, and
+      forecasting models; selects the best candidate by task-appropriate metric.
+    foundation_model: reasoning_model
+    action_groups:
+      - predictive_actions
+    memory: session
+    max_iterations: 10
+
+  - name: business_intelligence
+    display_name: "Business Intelligence Agent"
+    description: >
+      Surfaces KPI movement and identifies business opportunities from
+      cleaned data and analytics output.
+    foundation_model: reasoning_model
+    action_groups:
+      - analytics_actions
+      - rag_actions
+    memory: session
+    max_iterations: 6
+
+  - name: decision_support
+    display_name: "Decision Support Agent"
+    description: >
+      Produces strategic recommendations with confidence scores, estimated
+      ROI, priority, and action plans.
+    foundation_model: reasoning_model
+    action_groups:
+      - decision_actions
+      - rag_actions
+    memory: long_term
+    max_iterations: 8
+
+  - name: executive_summary
+    display_name: "Executive Summary Agent"
+    description: >
+      Synthesizes findings, risks, recommendations, and action items into an
+      executive-level report.
+    foundation_model: reasoning_model
+    action_groups:
+      - rag_actions
+    memory: long_term
+    max_iterations: 5
+
+  - name: rag_chat
+    display_name: "RAG Chat Agent"
+    description: >
+      Conversational analyst that retrieves grounded context before
+      answering and returns citations alongside every response.
+    foundation_model: reasoning_model
+    action_groups:
+      - rag_actions
+    memory: long_term
+    max_iterations: 6
+
+action_groups:
+  dataset_actions:
+    description: "Read/write dataset metadata, schema, and cleaning operations."
+    handler: backend.app.agentcore.action_groups.dataset_actions
+  analytics_actions:
+    description: "Run descriptive statistics, correlation, and trend queries via DuckDB."
+    handler: backend.app.agentcore.action_groups.analytics_actions
+  predictive_actions:
+    description: "Train/evaluate models and run forecasts."
+    handler: backend.app.agentcore.action_groups.predictive_actions
+  decision_actions:
+    description: "Generate and persist decision recommendations and scenarios."
+    handler: backend.app.agentcore.action_groups.decision_actions
+  rag_actions:
+    description: "Query the vector store for grounded context and return citations."
+    handler: backend.app.agentcore.action_groups.rag_actions
+
+memory:
+  session:
+    type: SHORT_TERM
+    ttl_seconds: 3600
+  long_term:
+    type: LONG_TERM
+    strategy: SUMMARIZATION
+
+identity:
+  workload_identity_name: dataspot-ai-workload-identity
+  auth_providers: []   # populate if agents call external OAuth-protected tools
+
+gateway:
+  enabled: false
+  name: dataspot-ai-gateway
+  # Enable + configure if action groups are exposed as an AgentCore Gateway
+  # (e.g. for shared tool access across multiple agent runtimes) rather than
+  # invoked in-process by the orchestrator.
+
+observability:
+  tracing_enabled: true
+  log_group: /dataspot-ai/agentcore/runtime
+  emit_agent_traces: true
+  emit_tool_traces: true

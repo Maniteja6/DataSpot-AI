@@ -1,0 +1,104 @@
+# AWS OpenSearch Serverless (vector engine) configuration for DataSpot AI's
+# RAG subsystem — the production counterpart to backend/app/rag/vector_store/local_faiss_store.py.
+# Apply as a CloudFormation template: aws cloudformation deploy --template-file opensearch_serverless_config.yaml --stack-name dataspot-ai-vectors
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: OpenSearch Serverless collection + security policies for DataSpot AI RAG vector store.
+
+Parameters:
+  CollectionName:
+    Type: String
+    Default: dataspot-ai-vectors
+  BackendRoleArn:
+    Type: String
+    Description: IAM role ARN used by the FastAPI backend to read/write vectors.
+  AgentCoreRoleArn:
+    Type: String
+    Description: IAM role ARN used by Bedrock AgentCore agents invoking rag_actions.
+
+Resources:
+  EncryptionPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: dataspot-ai-vectors-encryption
+      Type: encryption
+      Policy: !Sub |
+        {
+          "Rules": [
+            { "ResourceType": "collection", "Resource": ["collection/${CollectionName}"] }
+          ],
+          "AWSOwnedKey": true
+        }
+
+  NetworkPolicy:
+    Type: AWS::OpenSearchServerless::SecurityPolicy
+    Properties:
+      Name: dataspot-ai-vectors-network
+      Type: network
+      Policy: !Sub |
+        [
+          {
+            "Rules": [
+              { "ResourceType": "collection", "Resource": ["collection/${CollectionName}"] },
+              { "ResourceType": "dashboard", "Resource": ["collection/${CollectionName}"] }
+            ],
+            "AllowFromPublic": false,
+            "SourceVPCEs": ["<VPCE_ID>"]
+          }
+        ]
+
+  DataAccessPolicy:
+    Type: AWS::OpenSearchServerless::AccessPolicy
+    Properties:
+      Name: dataspot-ai-vectors-access
+      Type: data
+      Policy: !Sub |
+        [
+          {
+            "Rules": [
+              {
+                "ResourceType": "collection",
+                "Resource": ["collection/${CollectionName}"],
+                "Permission": ["aoss:*"]
+              },
+              {
+                "ResourceType": "index",
+                "Resource": ["index/${CollectionName}/*"],
+                "Permission": ["aoss:*"]
+              }
+            ],
+            "Principal": ["${BackendRoleArn}", "${AgentCoreRoleArn}"]
+          }
+        ]
+
+  VectorCollection:
+    Type: AWS::OpenSearchServerless::Collection
+    DependsOn: [EncryptionPolicy, NetworkPolicy]
+    Properties:
+      Name: !Ref CollectionName
+      Type: VECTORSEARCH
+      Description: "DataSpot AI dataset profiles, insights, forecasts, decisions, and conversation history — chunked and embedded for RAG retrieval."
+
+Outputs:
+  CollectionEndpoint:
+    Value: !GetAtt VectorCollection.CollectionEndpoint
+  CollectionArn:
+    Value: !GetAtt VectorCollection.Arn
+
+# --- Index schema (create after the collection exists, e.g. via the
+# OpenSearch _plugins/_search API or opensearch-py in a setup script) ---
+# index_name: dataspot-ai-index
+# mappings:
+#   properties:
+#     embedding:
+#       type: knn_vector
+#       dimension: 1024              # amazon.titan-embed-text-v2:0 output size
+#       method:
+#         name: hnsw
+#         engine: nmslib
+#         space_type: cosinesimil
+#     text: { type: text }
+#     source_type: { type: keyword }   # dataset_profile | cleaning_log | analytics_summary | ...
+#     dataset_id: { type: keyword }
+#     project_id: { type: keyword }
+#     created_at: { type: date }
