@@ -1,7 +1,7 @@
 import { apiClient, withMockFallback } from "./api-client";
-import type { RagAnswer } from "@/types/rag.types";
+import type { ChatResponse } from "@/types/rag.types";
 
-function mockRagAnswer(question: string): RagAnswer {
+function mockChatResponse(question: string, conversationId?: string): ChatResponse {
   return {
     answer: `Based on the indexed profile of orders_q4_2025.csv, here's what's grounded in your data: revenue is trending up ~$900/month with West region outperforming. Your question — "${question}" — is most directly supported by the analytics summary and the latest forecast run.`,
     citations: [
@@ -23,13 +23,19 @@ function mockRagAnswer(question: string): RagAnswer {
       },
     ],
     retrievedChunks: [],
+    conversationId: conversationId ?? `mock_conv_${Date.now()}`,
   };
 }
 
 export const chatService = {
-  ask: (question: string, datasetId?: string) =>
+  ask: (question: string, datasetId?: string, conversationId?: string) =>
     withMockFallback(
-      () => apiClient.post<RagAnswer>("/api/v1/chat", { question, datasetId }),
-      () => mockRagAnswer(question)
+      () =>
+        apiClient.post<ChatResponse>("/api/v1/chat", {
+          question,
+          datasetId,
+          conversationId,
+        }),
+      () => mockChatResponse(question, conversationId)
     ),
 };

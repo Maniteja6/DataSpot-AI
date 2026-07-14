@@ -4,8 +4,10 @@ import type { ChatMessage } from "@/types/api.types";
 interface ChatState {
   messages: ChatMessage[];
   isStreaming: boolean;
+  conversationId: string | null;
   addMessage: (message: ChatMessage) => void;
   setStreaming: (streaming: boolean) => void;
+  setConversationId: (id: string) => void;
   clearConversation: () => void;
 }
 
@@ -20,8 +22,10 @@ export const useChatStore = create<ChatState>((set) => ({
     },
   ],
   isStreaming: false,
+  conversationId: null,
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
   setStreaming: (streaming) => set({ isStreaming: streaming }),
-  clearConversation: () => set({ messages: [] }),
+  setConversationId: (id) => set({ conversationId: id }),
+  clearConversation: () => set({ messages: [], conversationId: null }),
 }));

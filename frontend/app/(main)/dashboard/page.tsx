@@ -93,7 +93,7 @@ export default function DashboardPage() {
             ]}
           />
         </div>
-        <AgentActivityTimeline />
+        <AgentActivityTimeline datasetId={ready[0]?.id} />
       </div>
     </div>
   );

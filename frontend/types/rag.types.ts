@@ -27,3 +27,6 @@ export interface RagAnswer {
   citations: CitationSource[];
   retrievedChunks: RetrievedChunk[];
 }
+export interface ChatResponse extends RagAnswer {
+  conversationId: string;
+}

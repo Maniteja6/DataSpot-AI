@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { AgentStatusPill } from "@/components/shared/AgentStatusPill";
 import { formatRelativeTime } from "@/lib/formatters";
 import { useAgentStream } from "@/hooks/useAgentStream";
+import { usePipelineStatus } from "@/hooks/usePipelineStatus";
 
 const AGENT_LABEL: Record<string, string> = {
   dataset_understanding: "Dataset Understanding",
@@ -16,8 +17,18 @@ const AGENT_LABEL: Record<string, string> = {
   rag_chat: "RAG Chat",
 };
 
-export function AgentActivityTimeline() {
-  const activity = useAgentStream();
+interface AgentActivityTimelineProps {
+  /** When provided, shows real pipeline activity for this dataset (polling
+   * the backend). When omitted, falls back to a simulated feed so the
+   * Dashboard doesn't look empty before anything's been uploaded. */
+  datasetId?: string;
+}
+
+export function AgentActivityTimeline({ datasetId }: AgentActivityTimelineProps) {
+  const pipelineStatus = usePipelineStatus(datasetId ?? null);
+  const simulatedActivity = useAgentStream();
+
+  const activity = datasetId ? pipelineStatus.data?.activity ?? [] : simulatedActivity;
 
   return (
     <Card>
@@ -28,6 +39,9 @@ export function AgentActivityTimeline() {
         </div>
       </CardHeader>
       <div className="space-y-4">
+        {activity.length === 0 && (
+          <p className="text-sm text-ink-faint">No agent activity yet — upload a dataset to see the pipeline run.</p>
+        )}
         {activity.map((a, i) => (
           <div key={a.id} className="relative flex gap-3 pl-1">
             <div className="flex flex-col items-center">
@@ -37,7 +51,7 @@ export function AgentActivityTimeline() {
             <div className="flex-1 pb-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-mono uppercase tracking-wide text-ink-faint">
-                  {AGENT_LABEL[a.agent]}
+                  {AGENT_LABEL[a.agent] ?? a.agent}
                 </p>
                 <AgentStatusPill status={a.status} />
               </div>

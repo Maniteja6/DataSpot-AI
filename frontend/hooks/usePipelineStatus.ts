@@ -2,17 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/react-query/queryKeys";
-import { mockPipelineStages, mockAgentActivity } from "@/services/mocks/mockData";
+import { agentsService } from "@/services/agents.service";
 
-// In production this polls GET /api/v1/agents/pipeline-status?datasetId=
-// via agents_controller.py, which reports live AgentCore agent/orchestrator state.
+// Polls GET /api/v1/agents/pipeline-status?datasetId= via agents_controller.py,
+// which reports live LangGraph pipeline / AgentCore agent state. Falls back
+// to generated mock data automatically when NEXT_PUBLIC_USE_MOCKS=true or if
+// the backend call fails (see services/agents.service.ts).
 export function usePipelineStatus(datasetId: string | null) {
   return useQuery({
     queryKey: queryKeys.pipeline.status(datasetId ?? "none"),
-    queryFn: async () => ({
-      stages: mockPipelineStages,
-      activity: mockAgentActivity,
-    }),
+    queryFn: () => agentsService.getPipelineStatus(datasetId as string),
     enabled: !!datasetId,
     refetchInterval: (query) => {
       const stillRunning = query.state.data?.stages.some(

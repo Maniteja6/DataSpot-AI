@@ -5,7 +5,8 @@ import { chatService } from "@/services/chat.service";
 import { useChatStore } from "@/stores/useChatStore";
 
 export function useRagChat(datasetId?: string) {
-  const { messages, addMessage, isStreaming, setStreaming } = useChatStore();
+  const { messages, addMessage, isStreaming, setStreaming, conversationId, setConversationId } =
+    useChatStore();
   const [error, setError] = useState<string | null>(null);
 
   const sendMessage = useCallback(
@@ -22,7 +23,8 @@ export function useRagChat(datasetId?: string) {
 
       setStreaming(true);
       try {
-        const result = await chatService.ask(question, datasetId);
+        const result = await chatService.ask(question, datasetId, conversationId ?? undefined);
+        setConversationId(result.conversationId);
         addMessage({
           id: `a_${Date.now()}`,
           role: "assistant",
@@ -36,7 +38,7 @@ export function useRagChat(datasetId?: string) {
         setStreaming(false);
       }
     },
-    [datasetId, addMessage, setStreaming]
+    [datasetId, conversationId, addMessage, setStreaming, setConversationId]
   );
 
   return { messages, sendMessage, isStreaming, error };
