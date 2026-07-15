@@ -50,6 +50,34 @@ class BedrockAgentCoreRuntime(BaseAgentRuntime):
         return payload.get("output", payload.get("text", ""))
 
 
+class BedrockRuntime(BaseAgentRuntime):
+    """
+    Calls Bedrock's Converse API directly with a Claude model — a
+    lightweight alternative to deploying a full AgentCore Runtime. Gives
+    real LLM-generated narration without a hosted runtime, container, or
+    ECR push. Conversation memory and tracing already live in this app
+    (orchestrators/memory_manager.py, agentcore/observability/*), so the
+    managed Memory/Gateway features AgentCore Runtime would add aren't
+    needed for this use case.
+    """
+
+    def __init__(self):
+        import boto3
+
+        settings = get_settings()
+        self._client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+        self._model_id = settings.bedrock_model_id
+        logger.info("BedrockRuntime bound to model %s", self._model_id)
+
+    def invoke(self, agent_name: str, prompt: str, session_id: str) -> str:
+        response = self._client.converse(
+            modelId=self._model_id,
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            inferenceConfig={"maxTokens": 1024, "temperature": 0.4},
+        )
+        return response["output"]["message"]["content"][0]["text"]
+
+
 class LocalDeterministicRuntime(BaseAgentRuntime):
     """
     Converts a structured prompt (instruction + '### FACTS' bullet section,
@@ -77,7 +105,7 @@ class LocalDeterministicRuntime(BaseAgentRuntime):
         # Join bullets into 1-3 flowing sentences instead of a raw list.
         sentences = []
         for i in range(0, len(bullets), 2):
-            group = bullets[i : i + 2]
+            group = [b.rstrip(".").strip() for b in bullets[i : i + 2]]
             sentences.append(", and ".join(group) + ".")
 
         prose = " ".join(s[0].upper() + s[1:] if s else s for s in sentences)
@@ -97,6 +125,12 @@ def get_agent_runtime() -> BaseAgentRuntime:
     if settings.aws_configured:
         try:
             _runtime = BedrockAgentCoreRuntime()
+            return _runtime
+        except Exception as exc:  # pragma: no cover - network/env dependent
+            logger.warning("Falling back to LocalDeterministicRuntime: %s", exc)
+    elif settings.bedrock_direct_invoke:
+        try:
+            _runtime = BedrockRuntime()
             return _runtime
         except Exception as exc:  # pragma: no cover - network/env dependent
             logger.warning("Falling back to LocalDeterministicRuntime: %s", exc)

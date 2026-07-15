@@ -3,7 +3,7 @@ import type { ChatResponse } from "@/types/rag.types";
 
 function mockChatResponse(question: string, conversationId?: string): ChatResponse {
   return {
-    answer: `Based on the indexed profile of orders_q4_2025.csv, here's what's grounded in your data: revenue is trending up ~$900/month with West region outperforming. Your question — "${question}" — is most directly supported by the analytics summary and the latest forecast run.`,
+    answer: `On "${question}":\n- Revenue is trending up ~$900/month, with the West region outperforming.\n- Revenue and units show a 0.78 correlation.\n- Forecast shows continued upward trend with bi-monthly seasonality, MAPE 8.1%.`,
     citations: [
       {
         id: "c1",

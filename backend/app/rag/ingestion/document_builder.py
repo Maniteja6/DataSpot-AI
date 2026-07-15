@@ -71,9 +71,14 @@ def build_analytics_summary_document(
 
 
 def build_forecast_summary_document(dataset: Dataset, run: PredictiveRun) -> SourceDocument:
+    candidate_lines = "; ".join(
+        f"{c.name} ({c.metric}={c.score:.4f}{', best' if c.is_best else ''})"
+        for c in run.candidates
+    )
     text = (
         f"Predictive run on {dataset.name} for target '{run.target}' ({run.task.value}). "
-        f"{run.explanation}"
+        f"{run.explanation} "
+        f"Candidates evaluated: {candidate_lines}."
     )
     return SourceDocument(
         title=f"Forecast Summary — {dataset.name}",

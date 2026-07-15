@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     bedrock_agentcore_role_arn: str | None = None
     bedrock_model_id: str = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 
+    # --- Bedrock direct invoke (lightweight alternative to a deployed
+    # AgentCore Runtime — calls Claude directly via bedrock-runtime) ---
+    bedrock_direct_invoke: bool = False
+
     # --- RAG ---
     vector_store_provider: str = "local_faiss"
     opensearch_collection_endpoint: str | None = None

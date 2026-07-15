@@ -17,7 +17,7 @@ export function ChatMessage({ message }: { message: ChatMessageType }) {
         {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
       </div>
       <div className={cn("max-w-[75%] rounded-2xl px-4 py-2.5 text-sm", isUser ? "bg-bg-raised text-ink" : "glass-panel text-ink-muted")}>
-        <p>{message.content}</p>
+        <p className="whitespace-pre-line">{message.content}</p>
         {message.citations && <RetrievedContextDrawer citations={message.citations} />}
       </div>
     </div>
