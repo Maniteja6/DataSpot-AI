@@ -65,7 +65,13 @@ class BedrockRuntime(BaseAgentRuntime):
         import boto3
 
         settings = get_settings()
-        self._client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+        self._client = boto3.client(
+            "bedrock-runtime",
+            region_name=settings.aws_region,
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+            aws_session_token=settings.aws_session_token,
+        )
         self._model_id = settings.bedrock_model_id
         logger.info("BedrockRuntime bound to model %s", self._model_id)
 

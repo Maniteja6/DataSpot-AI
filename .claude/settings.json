@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 21552 //F)",
+      "Bash(uvicorn app.main:app --port 8010)",
+      "Bash(curl -s -X POST http://127.0.0.1:8010/api/v1/chat -H \"Content-Type: application/json\" -d \"{\\\\\"question\\\\\": \\\\\"List variables from genai_llm_usage_dataset_1000.csv\\\\\", \\\\\"dataset_id\\\\\": \\\\\"ds_73b4162ac1b9\\\\\"}\")",
+      "Bash(taskkill //PID 8756 //F)",
+      "Bash(taskkill //PID 15960 //F)",
+      "Bash(taskkill //PID 20864 //F)",
+      "Bash(taskkill //PID 26404 //F)",
+      "PowerShell(Get-Process -Id 20864,26404 -ErrorAction SilentlyContinue)",
+      "Bash(curl -s http://127.0.0.1:8010/health)"
+    ]
+  }
+}
