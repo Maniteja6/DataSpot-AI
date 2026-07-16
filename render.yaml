@@ -8,12 +8,14 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
       - key: ENVIRONMENT
         value: production
       - key: LOG_LEVEL
         value: INFO
       - key: ALLOWED_ORIGINS
-        value: https://your-app.vercel.app
+        value: https://dataspot.vercel.app
       - key: AWS_REGION
         value: us-east-1
       - key: AWS_ACCESS_KEY_ID
