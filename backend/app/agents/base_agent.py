@@ -20,11 +20,13 @@ class BaseAgent:
         self._runtime = get_agent_runtime()
         self.logger = get_logger(f"dataspot.agents.{self.agent_name}")
 
-    def narrate(self, instruction: str, facts: list[str], dataset_id: str | None = None) -> str:
+    def narrate(
+        self, instruction: str, facts: list[str], dataset_id: str | None = None, max_tokens: int = 1024
+    ) -> str:
         """Sends `instruction` + a bullet list of `facts` to the agent
         runtime and returns the generated narrative text."""
         prompt = instruction.strip() + "\n\n### FACTS\n" + "\n".join(f"- {f}" for f in facts)
         session_id = dataset_id or uuid.uuid4().hex
 
         with trace_agent_invocation(self.agent_name, dataset_id=dataset_id):
-            return self._runtime.invoke(self.agent_name, prompt, session_id)
+            return self._runtime.invoke(self.agent_name, prompt, session_id, max_tokens=max_tokens)

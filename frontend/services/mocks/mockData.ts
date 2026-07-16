@@ -2,6 +2,7 @@ import type { Dataset, DatasetColumn } from "@/types/dataset.types";
 import type { Insight, CorrelationPair, ColumnProfile } from "@/types/insight.types";
 import type { PredictiveRun, ForecastPoint } from "@/types/prediction.types";
 import type { DecisionCard } from "@/types/decision.types";
+import type { RequirementRun } from "@/types/requirement.types";
 import type { AgentActivity, PipelineStage } from "@/types/agent.types";
 import type { Project } from "@/types/api.types";
 
@@ -163,6 +164,37 @@ export const mockDecisions: DecisionCard[] = [
   { id: "dc_3", title: "Investigate Nov 14 Midwest order spike", area: "risk", priority: "medium", narrative: "A 6.2σ spike in Midwest order volume on Nov 14 doesn't match any known promotion — worth confirming it isn't a data or fraud issue before year-end planning.", confidence: 0.71, expectedRoiPct: 0, impact: 3, effort: 1, estimatedValue: 0, actionSteps: ["Cross-check against promo calendar", "Sample 25 orders for manual review", "Confirm with fulfillment ops"], status: "proposed" },
   { id: "dc_4", title: "Consolidate low-margin SKUs", area: "cost", priority: "low", narrative: "Bottom-quartile SKUs by margin represent 4% of revenue but 11% of SKU management overhead.", confidence: 0.66, expectedRoiPct: 9, impact: 2, effort: 2, estimatedValue: 42000, actionSteps: ["Identify bottom-quartile SKUs by margin", "Review with category managers", "Sunset or reprice over next cycle"], status: "proposed" },
 ];
+
+export function mockRequirementRun(datasetId: string, requirement: string): RequirementRun {
+  return {
+    id: `rr_${Date.now()}`,
+    datasetId,
+    requirement,
+    parseMode: "structured",
+    createdAt: new Date().toISOString(),
+    decisions: [
+      {
+        id: `dc_mock_${Date.now()}`,
+        title: `Recommendation for: ${requirement.slice(0, 60)}`,
+        area: "revenue",
+        priority: "high",
+        narrative:
+          "This is a mock recommendation generated offline — connect the backend for tailored, dataset-grounded results.",
+        confidence: 0.7,
+        expectedRoiPct: 15,
+        impact: 4,
+        effort: 3,
+        estimatedValue: 50000,
+        actionSteps: ["Review with the relevant team", "Validate against the dataset", "Assign an owner and timeline"],
+        status: "proposed",
+      },
+    ],
+  };
+}
+
+export function mockRequirementHistory(datasetId: string): RequirementRun[] {
+  return [mockRequirementRun(datasetId, "Increase revenue in the lowest-performing segment")];
+}
 
 export const mockAgentActivity: AgentActivity[] = [
   { id: "a1", agent: "dataset_understanding", label: "Profiled orders_q4_2025.csv schema", status: "complete", startedAt: new Date(Date.now() - 1000 * 60 * 40).toISOString(), completedAt: new Date(Date.now() - 1000 * 60 * 39).toISOString() },

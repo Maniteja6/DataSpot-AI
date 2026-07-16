@@ -6,6 +6,7 @@ from app.api.v1 import (
     predictive_controller,
     data_quality_controller,
     decision_controller,
+    requirement_controller,
     export_controller,
     chat_controller,
     agents_controller,
@@ -18,6 +19,7 @@ api_router.include_router(insights_controller.router)
 api_router.include_router(predictive_controller.router)
 api_router.include_router(data_quality_controller.router)
 api_router.include_router(decision_controller.router)
+api_router.include_router(requirement_controller.router)
 api_router.include_router(export_controller.router)
 api_router.include_router(chat_controller.router)
 api_router.include_router(agents_controller.router)

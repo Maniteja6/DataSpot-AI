@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 class BaseAgentRuntime(ABC):
     @abstractmethod
-    def invoke(self, agent_name: str, prompt: str, session_id: str) -> str:
+    def invoke(self, agent_name: str, prompt: str, session_id: str, max_tokens: int = 1024) -> str:
         """Runs one turn of the named agent against `prompt`, returning the
         agent's natural-language response."""
 
@@ -39,7 +39,7 @@ class BedrockAgentCoreRuntime(BaseAgentRuntime):
         self._client = boto3.client("bedrock-agentcore", region_name=config.region)
         logger.info("BedrockAgentCoreRuntime bound to %s", config.endpoint)
 
-    def invoke(self, agent_name: str, prompt: str, session_id: str) -> str:
+    def invoke(self, agent_name: str, prompt: str, session_id: str, max_tokens: int = 1024) -> str:
         response = self._client.invoke_agent_runtime(
             agentRuntimeArn=self._config.endpoint,
             runtimeSessionId=session_id,
@@ -75,11 +75,11 @@ class BedrockRuntime(BaseAgentRuntime):
         self._model_id = settings.bedrock_model_id
         logger.info("BedrockRuntime bound to model %s", self._model_id)
 
-    def invoke(self, agent_name: str, prompt: str, session_id: str) -> str:
+    def invoke(self, agent_name: str, prompt: str, session_id: str, max_tokens: int = 1024) -> str:
         response = self._client.converse(
             modelId=self._model_id,
             messages=[{"role": "user", "content": [{"text": prompt}]}],
-            inferenceConfig={"maxTokens": 1024, "temperature": 0.4},
+            inferenceConfig={"maxTokens": max_tokens, "temperature": 0.4},
         )
         return response["output"]["message"]["content"][0]["text"]
 
@@ -95,7 +95,7 @@ class LocalDeterministicRuntime(BaseAgentRuntime):
 
     _FACTS_MARKER = "### FACTS"
 
-    def invoke(self, agent_name: str, prompt: str, session_id: str) -> str:
+    def invoke(self, agent_name: str, prompt: str, session_id: str, max_tokens: int = 1024) -> str:
         if self._FACTS_MARKER not in prompt:
             return prompt.strip()
 

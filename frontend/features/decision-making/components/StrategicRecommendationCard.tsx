@@ -17,7 +17,13 @@ const PRIORITY_VARIANT: Record<DecisionCard["priority"], "rose" | "amber" | "sig
   low: "neutral",
 };
 
-export function StrategicRecommendationCard({ decision }: { decision: DecisionCard }) {
+export function StrategicRecommendationCard({
+  decision,
+  readOnly = false,
+}: {
+  decision: DecisionCard;
+  readOnly?: boolean;
+}) {
   const updateStatus = useUpdateDecisionStatus(decision.id.split("_")[0] ?? "");
 
   return (
@@ -58,27 +64,29 @@ export function StrategicRecommendationCard({ decision }: { decision: DecisionCa
         ))}
       </ul>
 
-      <div className="mt-4 flex gap-2">
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => updateStatus.mutate({ id: decision.id, status: "in_progress" })}
-        >
-          Track action
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => updateStatus.mutate({ id: decision.id, status: "dismissed" })}
-        >
-          Dismiss
-        </Button>
-        <Link href={`/decision-making/scenario/${decision.id}`} className="ml-auto">
-          <Button size="sm" variant="ghost">
-            <Sliders className="h-3.5 w-3.5" /> Simulate
+      {!readOnly && (
+        <div className="mt-4 flex gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => updateStatus.mutate({ id: decision.id, status: "in_progress" })}
+          >
+            Track action
           </Button>
-        </Link>
-      </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => updateStatus.mutate({ id: decision.id, status: "dismissed" })}
+          >
+            Dismiss
+          </Button>
+          <Link href={`/decision-making/scenario/${decision.id}`} className="ml-auto">
+            <Button size="sm" variant="ghost">
+              <Sliders className="h-3.5 w-3.5" /> Simulate
+            </Button>
+          </Link>
+        </div>
+      )}
     </Card>
   );
 }

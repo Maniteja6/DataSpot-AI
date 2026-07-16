@@ -16,6 +16,9 @@ export const queryKeys = {
   decisions: {
     byDataset: (datasetId: string) => ["decisions", datasetId] as const,
   },
+  requirements: {
+    byDataset: (datasetId: string) => ["requirements", datasetId] as const,
+  },
   pipeline: {
     status: (datasetId: string) => ["pipeline", "status", datasetId] as const,
   },

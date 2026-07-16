@@ -39,13 +39,20 @@ class LocalEmbedder:
 
 class BedrockTitanEmbedder:
     """Real Bedrock Titan Text Embeddings v2 client. Only instantiated when
-    AWS AgentCore is configured (see EmbeddingService.__init__)."""
+    Bedrock is reachable (see EmbeddingService.__init__)."""
 
     def __init__(self, model_id: str, region: str):
         import boto3  # local import: avoids requiring boto3 credentials at module load
 
+        settings = get_settings()
         self.model_id = model_id
-        self._client = boto3.client("bedrock-runtime", region_name=region)
+        self._client = boto3.client(
+            "bedrock-runtime",
+            region_name=region,
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+            aws_session_token=settings.aws_session_token,
+        )
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         vectors = []
@@ -60,10 +67,10 @@ class BedrockTitanEmbedder:
 class EmbeddingService:
     def __init__(self):
         settings = get_settings()
-        if settings.aws_configured:
+        if settings.aws_configured or settings.bedrock_direct_invoke:
             try:
                 self._backend = BedrockTitanEmbedder(
-                    settings.embedding_model_id, settings.bedrock_agentcore_region
+                    settings.embedding_model_id, settings.aws_region
                 )
                 self.dimension = None  # determined by Titan response
                 logger.info("EmbeddingService using Bedrock Titan (%s)", settings.embedding_model_id)
