@@ -15,6 +15,13 @@ class RagChatAgent(BaseAgent):
     agent_name = "rag_chat"
 
     def run(self, question: str, dataset_id: str | None) -> RagAnswer:
+        if not dataset_id:
+            return RagAnswer(
+                answer="Select a dataset first so I can ground my answer in its actual data.",
+                citations=[],
+                retrieved_chunks=[],
+            )
+
         context = retrieve_context(question, dataset_id, top_k=5)
 
         if not context.chunks:
