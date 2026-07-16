@@ -13,7 +13,11 @@
       "Bash(curl -s http://127.0.0.1:8010/health)",
       "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" https://dataspot-ai-backend.onrender.com/health)",
       "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" --max-time 60 https://dataspot-ai-backend.onrender.com/health)",
-      "Bash(curl -s --max-time 60 -X POST https://dataspot-ai-backend.onrender.com/api/v1/chat -H \"Content-Type: application/json\" -d \"{\\\\\"question\\\\\": \\\\\"What are the columns in this dataset?\\\\\"}\")"
+      "Bash(curl -s --max-time 60 -X POST https://dataspot-ai-backend.onrender.com/api/v1/chat -H \"Content-Type: application/json\" -d \"{\\\\\"question\\\\\": \\\\\"What are the columns in this dataset?\\\\\"}\")",
+      "Bash(python -c ' *)",
+      "Bash(taskkill //PID 1372 //F)",
+      "Bash(curl -s http://127.0.0.1:8010/api/v1/datasets)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(len\\(d\\), 'datasets'\\); [print\\('-', x.get\\('name'\\), x.get\\('id'\\)\\) for x in d]\")"
     ]
   }
 }

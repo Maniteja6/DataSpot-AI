@@ -2,7 +2,7 @@ from __future__ import annotations
 import tempfile
 import shutil
 from pathlib import Path
-from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from app.models.dataset import Dataset
@@ -53,8 +53,8 @@ async def upload_dataset(
 
 
 @router.get("", response_model=list[Dataset])
-async def list_datasets():
-    return dataset_service.list_datasets()
+async def list_datasets(projectId: str | None = Query(default=None)):
+    return dataset_service.list_datasets(project_id=projectId)
 
 
 @router.get("/{dataset_id}", response_model=Dataset)

@@ -39,7 +39,9 @@ def get_dataset(dataset_id: str) -> Dataset | None:
     return dataset_repository.get(dataset_id)
 
 
-def list_datasets() -> list[Dataset]:
+def list_datasets(project_id: str | None = None) -> list[Dataset]:
+    if project_id:
+        return dataset_repository.list_by_project(project_id)
     return dataset_repository.list_all()
 
 

@@ -1,11 +1,12 @@
 import { apiClient, withMockFallback } from "./api-client";
 import { mockDatasets } from "./mocks/mockData";
+import { getSessionId } from "@/lib/session";
 import type { Dataset } from "@/types/dataset.types";
 
 export const datasetsService = {
   list: () =>
     withMockFallback(
-      () => apiClient.get<Dataset[]>("/api/v1/datasets"),
+      () => apiClient.get<Dataset[]>(`/api/v1/datasets?projectId=${getSessionId()}`),
       () => mockDatasets
     ),
 
@@ -20,7 +21,7 @@ export const datasetsService = {
       async () => {
         const formData = new FormData();
         formData.append("file", file);
-        if (projectId) formData.append("projectId", projectId);
+        formData.append("projectId", projectId ?? getSessionId());
         return apiClient.post<Dataset>("/api/v1/datasets/upload", formData);
       },
       () =>
