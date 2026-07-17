@@ -9,14 +9,35 @@ import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/shared/ConfidenceBadge";
 import { formatCurrency } from "@/lib/formatters";
 import { InsightsSkeleton } from "@/components/skeletons/InsightsSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Sliders } from "lucide-react";
 
 export default function ScenarioPage() {
   const { id } = useParams<{ id: string }>();
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
-  const { data: decisions, isLoading } = useDecisions(datasetId);
+  const datasetId = datasets?.[0]?.id ?? null;
+  const { data: decisions, isLoading } = useDecisions(datasetId ?? "");
+
+  if (!datasetId) {
+    return (
+      <EmptyState
+        icon={Sliders}
+        title="No dataset yet"
+        description="Upload a dataset from the Dashboard to run scenario simulations."
+      />
+    );
+  }
 
   if (isLoading || !decisions) return <InsightsSkeleton />;
+  if (decisions.length === 0) {
+    return (
+      <EmptyState
+        icon={Sliders}
+        title="No recommendations yet"
+        description="This dataset hasn't generated any decision recommendations to simulate."
+      />
+    );
+  }
   const decision = decisions.find((d) => d.id === id) ?? decisions[0];
 
   return (

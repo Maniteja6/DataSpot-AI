@@ -6,6 +6,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfidenceBadge } from "@/components/shared/ConfidenceBadge";
 import { InsightsSkeleton } from "@/components/skeletons/InsightsSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Sparkles } from "lucide-react";
 import type { InsightCategory } from "@/types/insight.types";
 
 const GROUPS: { key: InsightCategory | "all"; label: string }[] = [
@@ -21,8 +23,18 @@ const GROUPS: { key: InsightCategory | "all"; label: string }[] = [
 
 export default function AiInsightsPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
-  const { data: insights, isLoading } = useInsights(datasetId);
+  const datasetId = datasets?.[0]?.id ?? null;
+  const { data: insights, isLoading } = useInsights(datasetId ?? "");
+
+  if (!datasetId) {
+    return (
+      <EmptyState
+        icon={Sparkles}
+        title="No dataset yet"
+        description="Upload a dataset from the Dashboard to generate AI insights."
+      />
+    );
+  }
 
   if (isLoading || !insights) return <InsightsSkeleton />;
 

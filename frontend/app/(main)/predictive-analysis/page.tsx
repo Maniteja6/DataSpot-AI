@@ -9,14 +9,25 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { Sparkles } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Sparkles, TrendingUp } from "lucide-react";
 
 export default function PredictiveAnalysisPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
-  const { data: run, isLoading } = usePredictiveRun(datasetId);
-  const trainModel = useTrainModel(datasetId);
+  const datasetId = datasets?.[0]?.id ?? null;
+  const { data: run, isLoading } = usePredictiveRun(datasetId ?? "");
+  const trainModel = useTrainModel(datasetId ?? "");
   const [target, setTarget] = useState("revenue");
+
+  if (!datasetId) {
+    return (
+      <EmptyState
+        icon={TrendingUp}
+        title="No dataset yet"
+        description="Upload a dataset from the Dashboard to train predictive models and generate forecasts."
+      />
+    );
+  }
 
   if (isLoading || !run) return <TableSkeleton rows={8} />;
 

@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/charts/KpiCard";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { ShieldCheck, Copy, AlertTriangle, FileWarning } from "lucide-react";
 import { CheckCircle2, Circle } from "lucide-react";
 
@@ -20,8 +21,18 @@ const TYPE_LABEL: Record<string, string> = {
 
 export default function DataQualityPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
-  const { dataset, issues } = useDataQuality(datasetId);
+  const datasetId = datasets?.[0]?.id ?? null;
+  const { dataset, issues } = useDataQuality(datasetId ?? "");
+
+  if (!datasetId) {
+    return (
+      <EmptyState
+        icon={ShieldCheck}
+        title="No dataset yet"
+        description="Upload a dataset from the Dashboard to see its quality score and cleaning pipeline."
+      />
+    );
+  }
 
   if (dataset.isLoading || issues.isLoading || !dataset.data) return <TableSkeleton rows={6} />;
 

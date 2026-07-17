@@ -29,15 +29,15 @@ function scatterFromHistogram(histogram: { bucket: string; count: number }[]) {
 
 export default function DataInsightsPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
+  const datasetId = datasets?.[0]?.id ?? null;
 
-  const { data: insights, isLoading } = useInsights(datasetId);
-  const { data: correlations } = useCorrelations(datasetId);
-  const { data: columnProfiles } = useColumnProfiles(datasetId);
+  const { data: insights, isLoading } = useInsights(datasetId ?? "");
+  const { data: correlations } = useCorrelations(datasetId ?? "");
+  const { data: columnProfiles } = useColumnProfiles(datasetId ?? "");
 
-  if (isLoading) return <InsightsSkeleton />;
+  if (datasetId && isLoading) return <InsightsSkeleton />;
 
-  if (!insights || insights.length === 0) {
+  if (!datasetId || !insights || insights.length === 0) {
     return (
       <EmptyState
         icon={Sparkles}

@@ -5,6 +5,8 @@ import { useDecisions, useUpdateDecisionStatus } from "@/features/decision-makin
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { InsightsSkeleton } from "@/components/skeletons/InsightsSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ListChecks } from "lucide-react";
 import type { DecisionCard } from "@/types/decision.types";
 
 const COLUMNS: { key: DecisionCard["status"]; label: string }[] = [
@@ -16,9 +18,19 @@ const COLUMNS: { key: DecisionCard["status"]; label: string }[] = [
 
 export default function ActionTrackingPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
-  const { data: decisions, isLoading } = useDecisions(datasetId);
-  const updateStatus = useUpdateDecisionStatus(datasetId);
+  const datasetId = datasets?.[0]?.id ?? null;
+  const { data: decisions, isLoading } = useDecisions(datasetId ?? "");
+  const updateStatus = useUpdateDecisionStatus(datasetId ?? "");
+
+  if (!datasetId) {
+    return (
+      <EmptyState
+        icon={ListChecks}
+        title="No dataset yet"
+        description="Upload a dataset from the Dashboard to track decision actions."
+      />
+    );
+  }
 
   if (isLoading || !decisions) return <InsightsSkeleton />;
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, Sheet as SheetIcon, FileSpreadsheet, FileJson, Presentation } from "lucide-react";
+import { FileText, Sheet as SheetIcon, FileSpreadsheet, FileJson, Presentation, Download } from "lucide-react";
 import { useDatasets } from "@/features/datasets/hooks/useDatasets";
 import { useExport } from "@/features/export/hooks/useExport";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/shared/EmptyState";
 import type { ExportFormat } from "@/services/export.service";
 
 const EXPORT_OPTIONS: { format: ExportFormat; label: string; description: string; icon: React.ElementType }[] = [
@@ -17,8 +18,18 @@ const EXPORT_OPTIONS: { format: ExportFormat; label: string; description: string
 
 export default function ExportResultsPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? "ds_orders_2025";
-  const exportMutation = useExport(datasetId);
+  const datasetId = datasets?.[0]?.id ?? null;
+  const exportMutation = useExport(datasetId ?? "");
+
+  if (!datasetId) {
+    return (
+      <EmptyState
+        icon={Download}
+        title="No dataset yet"
+        description="Upload a dataset from the Dashboard to export its results."
+      />
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-fade-up">
