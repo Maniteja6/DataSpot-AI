@@ -21,3 +21,17 @@ export function usePipelineStatus(datasetId: string | null) {
     },
   });
 }
+
+/**
+ * Like usePipelineStatus, but never falls back to mock data on a 404 — used
+ * where a real empty state matters more than graceful degradation (e.g. the
+ * Dashboard's activity feed, which otherwise showed fake sample-dataset
+ * activity for real datasets with no tracked pipeline history).
+ */
+export function usePipelineStatusSafe(datasetId: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.pipeline.status(datasetId ?? "none"), "safe"],
+    queryFn: () => agentsService.getPipelineStatusSafe(datasetId as string),
+    enabled: !!datasetId,
+  });
+}

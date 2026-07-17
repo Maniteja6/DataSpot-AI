@@ -3,8 +3,7 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AgentStatusPill } from "@/components/shared/AgentStatusPill";
 import { formatRelativeTime } from "@/lib/formatters";
-import { useAgentStream } from "@/hooks/useAgentStream";
-import { usePipelineStatus } from "@/hooks/usePipelineStatus";
+import { usePipelineStatusSafe } from "@/hooks/usePipelineStatus";
 
 const AGENT_LABEL: Record<string, string> = {
   dataset_understanding: "Dataset Understanding",
@@ -18,17 +17,14 @@ const AGENT_LABEL: Record<string, string> = {
 };
 
 interface AgentActivityTimelineProps {
-  /** When provided, shows real pipeline activity for this dataset (polling
-   * the backend). When omitted, falls back to a simulated feed so the
-   * Dashboard doesn't look empty before anything's been uploaded. */
+  /** Shows real pipeline activity for this dataset (polling the backend).
+   * Omitted when there's no dataset yet — the empty state below covers that. */
   datasetId?: string;
 }
 
 export function AgentActivityTimeline({ datasetId }: AgentActivityTimelineProps) {
-  const pipelineStatus = usePipelineStatus(datasetId ?? null);
-  const simulatedActivity = useAgentStream();
-
-  const activity = datasetId ? pipelineStatus.data?.activity ?? [] : simulatedActivity;
+  const pipelineStatus = usePipelineStatusSafe(datasetId ?? null);
+  const activity = pipelineStatus.data?.activity ?? [];
 
   return (
     <Card>
