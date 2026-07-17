@@ -39,12 +39,14 @@ class RagChatAgent(BaseAgent):
             # it, but allow falling back to general knowledge for anything
             # the facts don't cover instead of refusing.
             answer = self.narrate(
-                f"Answer the analyst's question directly and concisely. Question: '{question}'. "
+                f"Answer EXACTLY what the analyst asked, no more. Question: '{question}'. "
                 "Ground your answer in the retrieved facts below whenever they're relevant. "
                 "If the facts don't fully cover the question, answer using your own general "
                 "knowledge instead of refusing, and make clear which parts of your answer are "
-                "specific to this dataset versus general knowledge. Respond as a short list of "
-                "specific points where possible.",
+                "specific to this dataset versus general knowledge. Match the requested scope "
+                "and quantity precisely — if asked for one thing, give exactly one, not several. "
+                "Do not add unrequested sections, sub-questions, caveats, or supporting context "
+                "the analyst didn't ask for. Be as brief as the question allows.",
                 facts,
                 dataset_id,
             )
@@ -52,9 +54,11 @@ class RagChatAgent(BaseAgent):
             # No LLM-usable context at all (no dataset selected, or nothing
             # indexed for it yet) — answer as a general-purpose assistant.
             answer = self.narrate(
-                f"Answer the analyst's question directly and helpfully, using your own "
-                f"general knowledge: '{question}'. No dataset-specific context is available "
-                "for this question, so don't claim the answer comes from any dataset.",
+                f"Answer EXACTLY what the analyst asked, no more, using your own general "
+                f"knowledge: '{question}'. No dataset-specific context is available for this "
+                "question, so don't claim the answer comes from any dataset. Match the "
+                "requested scope and quantity precisely, and don't add unrequested sections "
+                "or extra context.",
                 [],
                 dataset_id,
             )
