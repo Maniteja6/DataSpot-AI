@@ -85,6 +85,49 @@ After step 5, copy the `CollectionEndpoint` output into
 index using the schema documented at the bottom of
 `opensearch_serverless_config.yaml`.
 
+## 3b. Alternative vector store: Bedrock Knowledge Base (Aurora pgvector)
+
+`VECTOR_STORE_PROVIDER` is one of `local_faiss` (default) | `opensearch` |
+`bedrock_kb` — pick one, they're not layered on top of each other. This
+path uses a real, managed AWS Bedrock Knowledge Base instead of OpenSearch,
+backed by Aurora PostgreSQL Serverless v2 + pgvector rather than OpenSearch
+Serverless — chosen specifically because OpenSearch Serverless has a
+~$700/month minimum cost floor (a fixed OCU minimum billed even fully idle)
+that isn't proportionate for this project's scale, while Aurora Serverless
+v2 scales down to as little as 0.5 ACU when idle.
+
+1. Deploy the Aurora cluster:
+   ```bash
+   aws cloudformation deploy \
+     --template-file aurora_pgvector_config.yaml \
+     --stack-name dataspot-ai-vectors-aurora \
+     --parameter-overrides VpcId=<VPC_ID> SubnetIds=<SUBNET_ID_1>,<SUBNET_ID_2>
+   ```
+2. Enable the `vector` extension and create the KB-required table via the
+   RDS Data API (CloudFormation can't run arbitrary SQL) — exact commands
+   are documented in the comment block at the bottom of
+   `aurora_pgvector_config.yaml`.
+3. Create an S3 prefix for the Knowledge Base's data source — reuses the
+   same `dataspot-ai-datasets` bucket from step 1, under `kb-source/`
+   (already scoped in `iam_policy.json`'s `KnowledgeBaseSourceBucketAccess`
+   statement — no new bucket needed).
+4. Create the actual Bedrock Knowledge Base resource. As of general
+   availability there's no CloudFormation resource type for this, so it's
+   a console or CLI step — e.g. `aws bedrock-agent create-knowledge-base`
+   pointing its vector store config at the Aurora cluster/table from step 2
+   and a data source at `s3://dataspot-ai-datasets/kb-source/`.
+5. Copy the resulting knowledge base ID into `backend/.env` as
+   `BEDROCK_KNOWLEDGE_BASE_ID`, and set `VECTOR_STORE_PROVIDER=bedrock_kb`.
+6. **Ingestion is asynchronous.** Unlike `local_faiss`/`opensearch` (where a
+   dataset's profile becomes chat-queryable the instant that pipeline stage
+   finishes), Bedrock KB sync jobs can take real minutes to complete. A
+   freshly uploaded dataset won't be immediately queryable via chat on this
+   path — check job status with `aws bedrock-agent list-ingestion-jobs`
+   before assuming retrieval "isn't working."
+7. Existing content already indexed in `local_faiss` does **not**
+   auto-migrate — re-process (or re-upload) datasets you want in the new
+   Knowledge Base after switching providers.
+
 ## 4. Deploy the backend (FastAPI)
 
 The backend is container-friendly. A minimal path using ECS Fargate:

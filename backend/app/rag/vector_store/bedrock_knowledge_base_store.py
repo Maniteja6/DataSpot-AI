@@ -54,12 +54,23 @@ class BedrockKnowledgeBaseStore(BaseVectorStore):
 
     def search(self, query_embedding, top_k=5, filters=None) -> list[RetrievedChunk]:
         # Bedrock KB retrieval takes raw text, not a precomputed embedding —
-        # callers pass the query text through metadata["query_text"].
-        query_text = (filters or {}).get("query_text", "")
+        # callers pass the query text through filters["query_text"].
+        filters = filters or {}
+        query_text = filters.get("query_text", "")
+
+        vector_search_config: dict = {"numberOfResults": top_k}
+        dataset_id = filters.get("dataset_id")
+        if dataset_id:
+            # Matches the dataset_id written into each document's
+            # .metadata.json sidecar by kb_sync.write_documents_to_kb_source
+            # — without this, retrieval would search across every dataset
+            # in the knowledge base instead of just the selected one.
+            vector_search_config["filter"] = {"equals": {"key": "dataset_id", "value": dataset_id}}
+
         response = self._runtime_client.retrieve(
             knowledgeBaseId=self.knowledge_base_id,
             retrievalQuery={"text": query_text},
-            retrievalConfiguration={"vectorSearchConfiguration": {"numberOfResults": top_k}},
+            retrievalConfiguration={"vectorSearchConfiguration": vector_search_config},
         )
         results = []
         for i, item in enumerate(response.get("retrievalResults", [])):

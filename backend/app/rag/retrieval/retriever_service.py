@@ -32,7 +32,11 @@ def get_vector_store() -> BaseVectorStore:
             _vector_store = OpenSearchServerlessStore()
             return _vector_store
         except Exception as exc:  # pragma: no cover - network/env dependent
-            logger.warning("Falling back to local vector store: %s", exc)
+            # This provider was explicitly chosen (not the default) — a
+            # silent fallback here would hide a real misconfiguration
+            # behind "it's just using local FAISS" with no visible error.
+            logger.error("VECTOR_STORE_PROVIDER=opensearch failed to initialize: %s", exc)
+            raise
 
     if provider == "bedrock_kb" and settings.bedrock_knowledge_base_id:
         try:
@@ -41,16 +45,28 @@ def get_vector_store() -> BaseVectorStore:
             _vector_store = BedrockKnowledgeBaseStore()
             return _vector_store
         except Exception as exc:  # pragma: no cover
-            logger.warning("Falling back to local vector store: %s", exc)
+            logger.error("VECTOR_STORE_PROVIDER=bedrock_kb failed to initialize: %s", exc)
+            raise
 
     _vector_store = LocalFaissStore()
     return _vector_store
 
 
 def retrieve(query: str, dataset_id: str | None = None, top_k: int = 5) -> list[RetrievedChunk]:
-    embedder = get_embedding_service()
-    query_embedding = embedder.embed_one(query)
+    from app.rag.vector_store.bedrock_knowledge_base_store import BedrockKnowledgeBaseStore
 
     store = get_vector_store()
+
+    if isinstance(store, BedrockKnowledgeBaseStore):
+        # Bedrock KB embeds the query itself via the retrieve API — computing
+        # our own embedding here would be wasted work, and search() needs
+        # the raw query text (via filters), not a vector.
+        filters: dict = {"query_text": query}
+        if dataset_id:
+            filters["dataset_id"] = dataset_id
+        return store.search([], top_k=top_k, filters=filters)
+
+    embedder = get_embedding_service()
+    query_embedding = embedder.embed_one(query)
     filters = {"dataset_id": dataset_id} if dataset_id else None
     return store.search(query_embedding, top_k=top_k, filters=filters)

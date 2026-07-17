@@ -1,0 +1,115 @@
+# Aurora PostgreSQL Serverless v2 (pgvector) — the vector store backend for
+# a real AWS Bedrock Knowledge Base, chosen over OpenSearch Serverless
+# (infra/aws/opensearch_serverless_config.yaml) specifically for its ~$700/mo
+# minimum OCU floor vs. Aurora Serverless v2's ability to scale down to
+# 0.5 ACU when idle. Apply as a CloudFormation template:
+#   aws cloudformation deploy --template-file aurora_pgvector_config.yaml \
+#     --stack-name dataspot-ai-vectors-aurora \
+#     --parameter-overrides VpcId=<VPC_ID> SubnetIds=<SUBNET_ID_1>,<SUBNET_ID_2>
+#
+# This template does NOT create the Bedrock Knowledge Base resource itself —
+# as of general availability there's no clean CloudFormation resource type
+# for it, so that step (plus enabling the pgvector extension and creating
+# the KB-required table) is a short documented CLI/psql step at the bottom
+# of this file, the same pattern bedrock_agentcore_config.yaml already uses.
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Aurora PostgreSQL Serverless v2 cluster (pgvector) for DataSpot AI's Bedrock Knowledge Base.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two subnets in different AZs for the DB subnet group.
+  DatabaseName:
+    Type: String
+    Default: dataspot_ai_vectors
+  MinCapacityACU:
+    Type: Number
+    Default: 0.5
+    Description: Scales down to this when idle — the reason Aurora Serverless v2 was chosen over OpenSearch Serverless.
+  MaxCapacityACU:
+    Type: Number
+    Default: 4
+
+Resources:
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for the DataSpot AI vectors Aurora cluster.
+      SubnetIds: !Ref SubnetIds
+
+  DbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows Bedrock Knowledge Bases (via RDS Data API) to reach the cluster.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+          Description: >-
+            RDS Data API calls originate from AWS's managed infrastructure, not
+            a fixed IP range — tighten this to your VPC CIDR if the cluster is
+            ever reachable outside the Data API path.
+
+  VectorCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-postgresql
+      EngineVersion: "15.4"
+      EngineMode: provisioned
+      DatabaseName: !Ref DatabaseName
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VpcSecurityGroupIds: [!Ref DbSecurityGroup]
+      ManageMasterUserPassword: true
+      MasterUsername: dataspot_admin
+      EnableHttpEndpoint: true # RDS Data API — lets Bedrock KB and setup scripts talk to Aurora without a persistent connection/VPC networking from the backend itself
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: !Ref MinCapacityACU
+        MaxCapacity: !Ref MaxCapacityACU
+
+  VectorInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-postgresql
+      DBInstanceClass: db.serverless
+      DBClusterIdentifier: !Ref VectorCluster
+
+Outputs:
+  ClusterArn:
+    Value: !GetAtt VectorCluster.DBClusterArn
+  ClusterEndpoint:
+    Value: !GetAtt VectorCluster.Endpoint.Address
+  MasterUserSecretArn:
+    Value: !GetAtt VectorCluster.MasterUserSecret.SecretArn
+
+# --- One-time setup after the cluster exists (CloudFormation can't run
+# arbitrary SQL) — run via the RDS Data API, e.g.:
+#
+#   aws rds-data execute-statement \
+#     --resource-arn <ClusterArn output> \
+#     --secret-arn <MasterUserSecretArn output> \
+#     --database dataspot_ai_vectors \
+#     --sql "CREATE EXTENSION IF NOT EXISTS vector;"
+#
+#   aws rds-data execute-statement \
+#     --resource-arn <ClusterArn output> \
+#     --secret-arn <MasterUserSecretArn output> \
+#     --database dataspot_ai_vectors \
+#     --sql "CREATE TABLE bedrock_kb (
+#              id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+#              embedding vector(1024),        -- amazon.titan-embed-text-v2:0 output size
+#              chunks text,
+#              metadata json,
+#              custom_metadata jsonb
+#            );
+#            CREATE INDEX ON bedrock_kb USING hnsw (embedding vector_cosine_ops);"
+#
+# Then, when creating the Bedrock Knowledge Base itself (console or
+# `aws bedrock-agent create-knowledge-base`), point its vector store
+# configuration at this cluster (RdsConfiguration: resourceArn, credentialsSecretArn,
+# databaseName, tableName=bedrock_kb, and the column names above) and its
+# data source at the S3 prefix documented in infra/deployment_notes.md.

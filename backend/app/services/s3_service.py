@@ -74,6 +74,15 @@ class DatasetStorageService:
         from S3 to a temp file transparently if needed."""
         return self._backend.get_path(storage_key)
 
+    def put_kb_source_object(self, key: str, data: bytes) -> str:
+        """Writes a Bedrock Knowledge Base data-source object (a RAG
+        document body or its .metadata.json sidecar) under the same bucket
+        used for dataset uploads, namespaced under kb-source/ — Bedrock KB
+        needs a real S3 URI to sync from, so this is a no-op-ish local-disk
+        write (not a usable KB source) unless S3_BUCKET_NAME is actually
+        configured, same as every other AWS-dependent feature here."""
+        return self._backend.put_bytes(key, data)
+
     def delete(self, storage_key: str) -> None:
         self._backend.delete(storage_key)
 
