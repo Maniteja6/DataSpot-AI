@@ -11,10 +11,23 @@ from app.models.dataset import ColumnDataType
 
 def read_dataset_file(path: str, file_type: str) -> pd.DataFrame:
     if file_type == "csv":
-        return pd.read_csv(path)
+        return _read_csv_with_encoding_fallback(path)
     if file_type in ("xlsx", "xls"):
         return pd.read_excel(path)
     raise ValueError(f"Unsupported file type: {file_type}")
+
+
+def _read_csv_with_encoding_fallback(path: str) -> pd.DataFrame:
+    """Not every CSV is UTF-8 — Excel-exported files are commonly
+    Windows-1252 (cp1252). Try utf-8 first, then cp1252, then latin-1
+    (which never raises, since it maps every byte 0x00-0xFF to a
+    character) as a final catch-all rather than failing the upload."""
+    for encoding in ("utf-8", "cp1252", "latin-1"):
+        try:
+            return pd.read_csv(path, encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+    return pd.read_csv(path, encoding="latin-1", encoding_errors="replace")
 
 
 def infer_column_type(series: pd.Series) -> ColumnDataType:
