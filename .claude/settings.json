@@ -21,7 +21,11 @@
       "Bash(curl -s -X POST http://localhost:8010/api/v1/chat -H \"Content-Type: application/json\" -d '{\"question\":\"List the distinct values of the modelname column.\",\"datasetId\":\"ds_73b4162ac1b9\"}')",
       "Bash(curl -s -X POST http://localhost:8010/api/v1/chat -H \"Content-Type: application/json\" -d '{\"question\":\"What are the top 3 factors driving high token usage in this dataset?\",\"datasetId\":\"ds_73b4162ac1b9\"}')",
       "Bash(curl -s -X POST http://localhost:8010/api/v1/chat -H \"Content-Type: application/json\" -d '{\"question\":\"What is the capital of France?\"}')",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(cd \"c:\\\\Users\\\\manit\\\\OneDrive\\\\Desktop\\\\projects\\\\DataSpot-AI\" && mkdir -p .claude/skills/run-backend .claude/skills/run-frontend .claude/skills/verify-chat .claude/skills/add-aws-capability .claude/skills/reset-local-state .claude/skills/deploy)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\manit\\OneDrive\\Desktop\\projects\\DataSpot-AI\\.claude\\skills"
     ]
   }
 }
