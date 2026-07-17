@@ -79,7 +79,11 @@ class RagChatAgent(BaseAgent):
                 "specific to this dataset versus general knowledge. Match the requested scope "
                 "and quantity precisely — if asked for one thing, give exactly one, not several. "
                 "Do not add unrequested sections, sub-questions, caveats, or supporting context "
-                "the analyst didn't ask for. Be as brief as the question allows."
+                "the analyst didn't ask for. Minimize tokens: give the shortest correct answer — "
+                "a bare number or short phrase instead of a full sentence when that fully answers "
+                "the question, no restating the question, no markdown headers or bold titles unless "
+                "the answer genuinely has multiple items, and no closing summary or offer to help "
+                "further."
                 + (
                     "\n\nIf the facts above don't cover the question AND it needs exact raw data "
                     "(e.g. distinct values of a column, an exact count/median, specific rows) that "
@@ -99,7 +103,9 @@ class RagChatAgent(BaseAgent):
                 if succeeded:
                     answer = self.narrate(
                         f"Using the live query result below, answer the analyst's original "
-                        f"question concisely: '{question}'.",
+                        f"question: '{question}'. Minimize tokens: shortest correct answer, "
+                        "no restating the question, no markdown headers unless there are "
+                        "multiple items, no closing summary.",
                         [query_fact],
                         dataset_id,
                     )
@@ -119,7 +125,11 @@ class RagChatAgent(BaseAgent):
                 f"knowledge: '{question}'. No dataset-specific context is available for this "
                 "question, so don't claim the answer comes from any dataset. Match the "
                 "requested scope and quantity precisely, and don't add unrequested sections "
-                "or extra context.",
+                "or extra context. Minimize tokens: give the shortest correct answer — a bare "
+                "number or short phrase instead of a full sentence when that fully answers the "
+                "question, no restating the question, no markdown headers or bold titles unless "
+                "the answer genuinely has multiple items, and no closing summary or offer to "
+                "help further.",
                 [],
                 dataset_id,
             )
