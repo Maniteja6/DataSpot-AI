@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useDatasets } from "@/features/datasets/hooks/useDatasets";
 import { useInsights } from "@/features/data-insights/hooks/useInsights";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,6 +8,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { ConfidenceBadge } from "@/components/shared/ConfidenceBadge";
 import { InsightsSkeleton } from "@/components/skeletons/InsightsSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { DatasetPicker } from "@/components/shared/DatasetPicker";
 import { Sparkles } from "lucide-react";
 import type { InsightCategory } from "@/types/insight.types";
 
@@ -23,23 +25,35 @@ const GROUPS: { key: InsightCategory | "all"; label: string }[] = [
 
 export default function AiInsightsPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? null;
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const datasetId = selectedDatasetId ?? datasets?.[0]?.id ?? null;
   const { data: insights, isLoading } = useInsights(datasetId ?? "");
 
   if (!datasetId) {
     return (
-      <EmptyState
-        icon={Sparkles}
-        title="No dataset yet"
-        description="Upload a dataset from the Dashboard to generate AI insights."
-      />
+      <div className="space-y-6 animate-fade-up">
+        <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
+        <EmptyState
+          icon={Sparkles}
+          title="No dataset yet"
+          description="Upload a dataset from the Dashboard to generate AI insights."
+        />
+      </div>
     );
   }
 
-  if (isLoading || !insights) return <InsightsSkeleton />;
+  if (isLoading || !insights) {
+    return (
+      <div className="space-y-6 animate-fade-up">
+        <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
+        <InsightsSkeleton />
+      </div>
+    );
+  }
 
   return (
-    <div className="animate-fade-up">
+    <div className="space-y-6 animate-fade-up">
+      <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
       <Tabs defaultValue="all">
         <TabsList>
           {GROUPS.map((g) => (

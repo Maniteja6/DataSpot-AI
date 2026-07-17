@@ -10,29 +10,42 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { DatasetPicker } from "@/components/shared/DatasetPicker";
 import { Sparkles, TrendingUp } from "lucide-react";
 
 export default function PredictiveAnalysisPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? null;
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const datasetId = selectedDatasetId ?? datasets?.[0]?.id ?? null;
   const { data: run, isLoading } = usePredictiveRun(datasetId ?? "");
   const trainModel = useTrainModel(datasetId ?? "");
   const [target, setTarget] = useState("revenue");
 
   if (!datasetId) {
     return (
-      <EmptyState
-        icon={TrendingUp}
-        title="No dataset yet"
-        description="Upload a dataset from the Dashboard to train predictive models and generate forecasts."
-      />
+      <div className="space-y-6 animate-fade-up">
+        <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
+        <EmptyState
+          icon={TrendingUp}
+          title="No dataset yet"
+          description="Upload a dataset from the Dashboard to train predictive models and generate forecasts."
+        />
+      </div>
     );
   }
 
-  if (isLoading || !run) return <TableSkeleton rows={8} />;
+  if (isLoading || !run) {
+    return (
+      <div className="space-y-6 animate-fade-up">
+        <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
+        <TableSkeleton rows={8} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-up">
+      <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
       <Card>
         <CardHeader>
           <div>

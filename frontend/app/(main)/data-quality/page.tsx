@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { KpiCard } from "@/components/charts/KpiCard";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { DatasetPicker } from "@/components/shared/DatasetPicker";
 import { ShieldCheck, Copy, AlertTriangle, FileWarning } from "lucide-react";
 import { CheckCircle2, Circle } from "lucide-react";
+import { useState } from "react";
 
 const SEVERITY_VARIANT = { high: "rose", medium: "amber", low: "neutral" } as const;
 const TYPE_LABEL: Record<string, string> = {
@@ -21,26 +23,38 @@ const TYPE_LABEL: Record<string, string> = {
 
 export default function DataQualityPage() {
   const { data: datasets } = useDatasets();
-  const datasetId = datasets?.[0]?.id ?? null;
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const datasetId = selectedDatasetId ?? datasets?.[0]?.id ?? null;
   const { dataset, issues } = useDataQuality(datasetId ?? "");
 
   if (!datasetId) {
     return (
-      <EmptyState
-        icon={ShieldCheck}
-        title="No dataset yet"
-        description="Upload a dataset from the Dashboard to see its quality score and cleaning pipeline."
-      />
+      <div className="space-y-6 animate-fade-up">
+        <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
+        <EmptyState
+          icon={ShieldCheck}
+          title="No dataset yet"
+          description="Upload a dataset from the Dashboard to see its quality score and cleaning pipeline."
+        />
+      </div>
     );
   }
 
-  if (dataset.isLoading || issues.isLoading || !dataset.data) return <TableSkeleton rows={6} />;
+  if (dataset.isLoading || issues.isLoading || !dataset.data) {
+    return (
+      <div className="space-y-6 animate-fade-up">
+        <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
+        <TableSkeleton rows={6} />
+      </div>
+    );
+  }
 
   const d = dataset.data;
   const resolvedCount = issues.data?.filter((i) => i.resolved).length ?? 0;
 
   return (
     <div className="space-y-6 animate-fade-up">
+      <DatasetPicker value={datasetId} onChange={setSelectedDatasetId} />
       <div className="grid gap-4 md:grid-cols-4">
         <KpiCard label="Quality score" value={`${d.qualityScore}%`} icon={ShieldCheck} accent="signal" />
         <KpiCard label="Duplicate rows" value={d.duplicateRows.toLocaleString()} icon={Copy} accent="amber" />
