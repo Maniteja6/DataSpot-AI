@@ -1,94 +1,132 @@
-# DataSpot-AI# DataSpot AI
+# DataSpot AI
 
-A RAG-powered AI data analyst. Upload a CSV/Excel dataset and a multi-stage LangGraph agent pipeline profiles, cleans, analyzes, forecasts, and generates decision recommendations — indexing every stage's output as it completes so a chat assistant can answer questions grounded in that dataset's actual analysis, not a generic LLM guess.
+Live App: https://dataspot.vercel.app/dashboard
 
-```
-$ uvicorn app.main:app --reload
-DataSpot AI Backend
-Environment: local  |  AWS configured: false  |  S3 configured: false
-Agent runtime: local deterministic (set BEDROCK_DIRECT_INVOKE=true for real Claude narration)
-Vector store: local_faiss
-✓ Ready → http://localhost:8000
-
-$ curl -s localhost:8000/api/v1/chat -d '{"datasetId":"ds_8f2","message":"which region is dragging down revenue?"}'
-{
-  "answer": "West region revenue has declined 18% over the last 6 weeks, driven by a drop in units per order (see forecast + decision stages)...",
-  "sources": ["forecast_summary", "decision_recommendations"],
-  "queryUsed": null
-}
-```
+A RAG-powered AI data analyst agent. Upload a tabular dataset (CSV/Excel) and a multi-stage LangGraph pipeline profiles, cleans, analyzes, forecasts, and generates decision recommendations plus an executive summary — indexing every stage's output into a retrieval store as it completes, so a chat assistant can answer natural-language questions grounded in that dataset's own analysis instead of a generic LLM guess.
 
 ## Features
 
-- **LangGraph pipeline** — `validate → clean → analyze → predict → decide → summarize → index`, run as a background task per upload while the frontend polls status.
-- **Graceful AWS degradation** — every AWS-backed capability (LLM reasoning, embeddings, vector store, object storage) has a local, zero-config fallback chosen automatically at runtime. Boots and runs fully offline with no cloud account.
-- **Agent runtime abstraction** — every agent narrates through one shared method that routes to a deployed AgentCore Runtime → direct Bedrock `Converse` invocation → a local deterministic templating engine, in priority order. Agents never touch the AWS SDK directly.
-- **RAG-grounded chat** — each pipeline stage's output is chunked and indexed into the vector store immediately after that stage completes, so the chat assistant is grounded in partial analysis before the full pipeline finishes.
-- **Raw-data query escape hatch** — when retrieved facts don't cover a question, the chat agent emits a structured "I need a live query" signal; the SQL is validated (read-only, single statement, blocklisted keywords) and run against an in-memory DuckDB engine over the dataset's own dataframe.
-- **Pluggable vector store** — local FAISS (numpy cosine-similarity fallback if FAISS isn't installed), OpenSearch Serverless, or a Bedrock Knowledge Base (Aurora PostgreSQL + pgvector), swapped with one setting.
-- **Forecasting** — scikit-learn / statsmodels Holt-Winters by default, with an optional Prophet upgrade.
-- **Decisions + export** — decision cards with scenario modeling, and export to CSV, JSON, Excel, PDF, or PPTX.
-- **Session-scoped datasets, no auth** — a per-browser session id scopes what's visible in a shared demo deployment; it's a UX convenience, not a security boundary.
+- Upload CSV or Excel (`.xlsx`) datasets
+- Automated LangGraph pipeline: validate & profile → clean → analyze → predict → decide → summarize → index
+- Data cleaning with a transparent, stage-by-stage cleaning report
+- Data quality scoring and issue detection derived from the cleaning report
+- EDA: profiling summaries, statistical description, correlations, column-level insights
+- Forecasting: scikit-learn / statsmodels Holt-Winters baseline (Prophet as an optional upgrade)
+- Decision recommendation cards with scenario modeling
+- RAG-grounded chat assistant — retrieves from a vector index built from the pipeline's own analysis, with a raw-data query escape hatch (validated read-only SQL run against the dataset via DuckDB) for questions retrieval alone can't answer
+- Export to CSV, JSON, Excel, PDF, or PPTX
+- **Graceful AWS degradation** — every AWS-backed capability (Claude narration, embeddings, vector store, object storage) has a local, zero-config fallback chosen automatically at runtime; the app runs fully offline with no cloud account and upgrades piece-by-piece as AWS config is added
+- Session-scoped datasets, no auth required — a per-browser session id scopes what's visible in a shared demo deployment
 
-## Architecture
+## Workflow
+
+```
+Upload (CSV / XLSX)
+        ↓
+Validate & profile
+        ↓
+Data cleaning + quality scoring
+        ↓
+Analytics (EDA, correlations, summaries)
+        ↓
+Predictive forecasting (optional target/metric)
+        ↓
+Decision recommendations + scenario modeling
+        ↓
+Executive summary
+        ↓
+Index into vector store → RAG chat assistant
+        ↓
+Export (CSV / JSON / Excel / PDF / PPTX)
+```
+
+Each stage indexes its output into the vector store immediately after it completes, so the chat assistant is grounded in partial analysis before the full pipeline finishes running.
+
+## Tech stack
+
+| Area | Libraries |
+|---|---|
+| Backend framework | FastAPI, Uvicorn, Pydantic |
+| Orchestration | LangGraph, LangChain Core |
+| Data processing | pandas, NumPy, PyArrow, DuckDB, openpyxl |
+| ML / forecasting | scikit-learn, statsmodels (Prophet optional) |
+| RAG / vector store | local FAISS (pure-NumPy cosine-similarity fallback if FAISS isn't installed), OpenSearch Serverless, or Bedrock Knowledge Base (Aurora PostgreSQL + pgvector) |
+| LLM | AWS Bedrock — AgentCore Runtime / direct Claude `Converse` invocation / local deterministic template runtime |
+| Export | ReportLab (PDF), python-pptx |
+| Frontend | Next.js 15 (App Router), React 18, TypeScript |
+| Frontend UI | Tailwind CSS, Radix UI, Framer Motion, Lucide, Recharts, AG Grid |
+| Frontend state | TanStack Query, Zustand, React Hook Form + Zod |
+| Testing | pytest + httpx (real `TestClient`, no app mocking), ESLint, `tsc` |
+
+## Project structure
 
 ```
 DataSpot-AI/
-├── backend/app/
-│   ├── agents/          # One class per pipeline stage (understanding, cleaning, analytics,
-│   │                     BI, predictive, decision support, executive summary)
-│   ├── agentcore/        # AgentCore-shaped scaffolding: action groups, gateway, memory, identity
-│   ├── orchestrators/     # LangGraph pipeline graph, agent router, RAG orchestrator
-│   ├── rag/              # Embeddings, chunking/indexing, retrieval, pluggable vector stores
-│   ├── api/v1/           # FastAPI controllers (datasets, insights, predictive, chat, decisions, export...)
-│   ├── repositories/      # Flat-file JSON persistence (no database)
-│   └── services/          # Business logic: cleaning, analytics, forecasting, export
-└── frontend/
-    ├── app/(main)/        # One route per surface: dashboard, chat, data-insights, predictive-analysis...
-    ├── features/          # Feature-scoped hooks & components
-    └── services/          # One module per backend resource, live API first, mock data as fallback
+├── backend/
+│   └── app/
+│       ├── agents/          # One class per pipeline stage (understanding, cleaning,
+│       │                      analytics, BI, predictive, decision support, exec summary, chat)
+│       ├── agentcore/        # AgentCore-shaped scaffolding: action groups, gateway, memory, identity
+│       ├── orchestrators/     # LangGraph pipeline graph, agent router, RAG orchestrator
+│       ├── rag/              # Embeddings, ingestion/indexing, retrieval, pluggable vector stores
+│       ├── api/v1/           # FastAPI controllers (datasets, insights, predictive, data-quality,
+│       │                      decisions, chat, export, agents, projects, requirements)
+│       ├── repositories/      # Flat-file JSON persistence (no database)
+│       ├── services/          # Business logic: cleaning, profiling, analytics, forecasting, ML, export
+│       ├── models/ schemas/ config/ middleware/
+│       └── main.py
+├── frontend/
+│   └── app/(main)/            # One route per surface: dashboard, datasets, chat-assistant,
+│                                data-insights, predictive-analysis, data-quality, ai-insights,
+│                                decision-making, export, projects
+│       ├── features/          # Feature-scoped hooks & components
+│       ├── services/          # One module per backend resource, live API first, mock data as fallback
+│       └── stores/            # Zustand client state
+└── infra/                     # AWS IaC templates & deployment notes (Aurora/pgvector, OpenSearch, IAM)
 ```
 
-**Query flow:** upload → LangGraph runs each pipeline stage's agent against the dataset → that stage's output is built into a retrieval document and indexed immediately → chat assistant retrieves relevant stage documents (falling back to a live DuckDB query over the raw rows when retrieval can't answer) → the active agent runtime narrates the response.
+## Prerequisites
 
-## Getting started
+- Python 3.11+
+- Node.js 18+
+- No AWS account required for local/offline use
 
-**Prerequisites:** Python 3.11+, Node 18+. No AWS account required.
+## Installation
 
 ```bash
-# backend
-cd backend
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload --port 8000
-
-# frontend (separate terminal)
-cd frontend
-npm install
-cp .env.local.example .env.local
-npm run dev
+git clone <your-repo-url>
+cd DataSpot-AI
 ```
 
-Open `http://localhost:3000`, upload a CSV/Excel file, and watch the pipeline run.
+Backend:
 
-## API
+```bash
+cd backend
+python -m venv venv
+```
 
-All routes are prefixed `/api/v1`; interactive docs at `/docs`.
+Activate the virtual environment (Windows PowerShell):
 
-| Resource | Routes |
-|---|---|
-| Datasets | `POST /datasets/upload`, `GET /datasets`, `GET /datasets/{id}`, `DELETE /datasets/{id}` |
-| Insights | `GET /insights`, `GET /insights/{id}/correlations`, `GET /insights/{id}/columns` |
-| Predictive | `GET /predictive/{id}`, `POST /predictive/{id}/train` |
-| Data quality | `GET /data-quality/{id}`, `GET /data-quality/{id}/issues` |
-| Decisions | `GET /decisions`, `PUT /decisions/{id}`, `POST /decisions/{id}/scenario` |
-| Chat | `POST /chat`, `GET /chat/{conversation_id}/history` |
-| Export | `POST /export`, `GET /export/download/{filename}` |
-| Agents | `GET /agents/definitions`, `GET /agents/pipeline-status` |
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+Frontend (separate terminal):
+
+```bash
+cd frontend
+npm install
+```
 
 ## Configuration
 
-Everything AWS-related is optional — unset means "use the local substitute." Full annotated list in `backend/.env.example`.
+Backend — copy `backend/.env.example` to `backend/.env`. Everything AWS-related is optional; unset means "use the local substitute":
 
 ```bash
 BEDROCK_DIRECT_INVOKE=false        # true + AWS creds -> real Claude narration via Bedrock Converse
@@ -98,15 +136,39 @@ EMBEDDING_MODEL_ID=amazon.titan-embed-text-v2:0
 S3_BUCKET_NAME=                    # empty -> uploaded datasets stored on local disk
 ```
 
-Switching `VECTOR_STORE_PROVIDER` mid-project isn't free: local hashing-based embeddings and real Bedrock embeddings have different dimensionality, so a provider switch means rebuilding the local index (re-run the pipeline per dataset). The two AWS-backed providers raise on misconfiguration rather than silently falling back to local.
+Frontend — copy `frontend/.env.local.example` to `frontend/.env.local`:
 
-## Why I built this
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_USE_MOCKS=False
+```
 
-RAG demos are easy to fake with a hardcoded vector DB and one happy-path query. The interesting part of this project was making retrieval, agent orchestration, and forecasting all work identically whether AWS is configured or not — so the same pipeline code that runs a laptop demo is exactly what runs in production, just with real embeddings and a real Claude call swapped in underneath.
+Switching `VECTOR_STORE_PROVIDER` mid-project isn't free: local hashing-based embeddings and real Bedrock embeddings differ in dimensionality, so a provider switch means rebuilding the local vector index (re-run the pipeline per dataset). The two AWS-backed providers raise on misconfiguration rather than silently falling back to the local index.
 
-## Tech stack
+## Run the application
 
-Python · FastAPI · LangGraph / LangChain · pandas / DuckDB · scikit-learn / statsmodels · FAISS · AWS Bedrock (AgentCore, Converse API, Titan embeddings) · Next.js 15 · TypeScript · Tailwind · TanStack Query · Zustand
+```bash
+# backend
+cd backend
+uvicorn app.main:app --reload --port 8000
+
+# frontend (separate terminal)
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:3000`, upload a CSV/Excel file, and watch the pipeline run stage by stage. Interactive API docs are available at `http://localhost:8000/docs`.
+
+## Example use case
+
+Upload something like a retail sales or Titanic-style dataset. The pipeline profiles and cleans it, scores data quality, runs EDA and correlation analysis, trains a baseline forecast, and produces decision cards and an executive summary — all indexed as it goes. Then ask the chat assistant something like *"which region is dragging down revenue?"* and get an answer grounded in the actual forecast and decision-stage output, with sources cited.
+
+## Project goals
+
+- Demonstrate a production-shaped, multi-agent RAG pipeline that runs identically offline and on AWS
+- Show that retrieval, agent orchestration, and forecasting can share one codebase with zero cloud-specific branches
+- Combine deterministic analytics (real computed numbers) with LLM-generated narration and interpretation
+- Ground a conversational assistant in a dataset's own analysis rather than general LLM knowledge
 
 ## Testing
 
