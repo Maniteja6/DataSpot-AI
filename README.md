@@ -1,6 +1,6 @@
 # DataSpot AI
 
-Live App: https://dataspot.vercel.app/dashboard
+Live App: https://dataspot.vercel.app
 
 A RAG-powered AI data analyst agent. Upload a tabular dataset (CSV/Excel) and a multi-stage LangGraph pipeline profiles, cleans, analyzes, forecasts, and generates decision recommendations plus an executive summary — indexing every stage's output into a retrieval store as it completes, so a chat assistant can answer natural-language questions grounded in that dataset's own analysis instead of a generic LLM guess.
 
